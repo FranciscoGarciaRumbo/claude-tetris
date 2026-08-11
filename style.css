@@ -29,6 +29,18 @@
   --toggle-bg: #1a1a25;
   --toggle-border: #2a2a3a;
   --toggle-color: #e0e0e0;
+  --hs-name-color: #cfcfe0;
+  --hs-score-color: #7aa2f7;
+  --hs-empty-color: #555570;
+  --hs-highlight-bg: rgba(122, 162, 247, 0.18);
+  --hs-highlight-border: #7aa2f7;
+  --input-bg: #1a1a25;
+  --input-border: #3a3a5a;
+  --input-color: #e0e0e0;
+  --reset-btn-bg: transparent;
+  --reset-btn-border: #3a3a5a;
+  --reset-btn-fg: #e57373;
+  --reset-btn-bg-hover: rgba(229, 115, 115, 0.15);
 }
 
 body.light {
@@ -56,6 +68,18 @@ body.light {
   --toggle-bg: #ffffff;
   --toggle-border: #c8c8d8;
   --toggle-color: #1a1a25;
+  --hs-name-color: #3a3a4a;
+  --hs-score-color: #3b5bdb;
+  --hs-empty-color: #8a8aa0;
+  --hs-highlight-bg: rgba(59, 91, 219, 0.12);
+  --hs-highlight-border: #3b5bdb;
+  --input-bg: #ffffff;
+  --input-border: #c0c0d0;
+  --input-color: #1a1a25;
+  --reset-btn-bg: transparent;
+  --reset-btn-border: #c0c0d0;
+  --reset-btn-fg: #c62828;
+  --reset-btn-bg-hover: rgba(198, 40, 40, 0.1);
 }
 
 body {
@@ -155,6 +179,108 @@ body {
   border: 1px solid var(--board-border);
   background: var(--board-bg);
   border-radius: 4px;
+}
+
+.value.small {
+  font-size: 18px;
+}
+
+/* ---- Records ---- */
+.highscores-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.highscores-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: var(--hs-name-color);
+}
+
+.highscores-list li:only-child:not(.highscore-new) {
+  color: var(--hs-empty-color);
+  justify-content: center;
+}
+
+.hs-score {
+  font-family: 'Courier New', Courier, monospace;
+  color: var(--hs-score-color);
+  font-weight: 700;
+}
+
+.highscore-new {
+  background: var(--hs-highlight-bg);
+  outline: 1px solid var(--hs-highlight-border);
+}
+
+.reset-btn {
+  margin-top: 4px;
+  background: var(--reset-btn-bg);
+  color: var(--reset-btn-fg);
+  border: 1px solid var(--reset-btn-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.reset-btn:hover {
+  background: var(--reset-btn-bg-hover);
+}
+
+/* ---- Alta de nombre en game over ---- */
+.name-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.name-entry.hidden {
+  display: none;
+}
+
+.name-entry-label {
+  font-size: 12px;
+  color: var(--overlay-score-color);
+}
+
+#name-input {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-color);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 14px;
+  text-align: center;
+  width: 160px;
+}
+
+#save-score-btn {
+  background: var(--restart-bg);
+  color: var(--restart-fg);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#save-score-btn:hover {
+  background: var(--restart-bg-hover);
+}
+
+#overlay-highscores {
+  width: 220px;
 }
 
 /* ---- Controles ---- */
