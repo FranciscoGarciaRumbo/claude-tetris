@@ -28,6 +28,39 @@ const PIECES = [
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
+const GRID_LINE_COLORS = { dark: '#22222e', light: '#d8d8e4' };
+const HIGHLIGHT_COLORS = { dark: 'rgba(255,255,255,0.12)', light: 'rgba(255,255,255,0.45)' };
+
+const THEME_KEY = 'tetris-theme';
+let currentTheme = 'dark';
+
+const themeToggleBtn = document.getElementById('theme-toggle');
+
+function setTheme(theme) {
+  currentTheme = theme;
+  document.body.classList.toggle('light', theme === 'light');
+  if (themeToggleBtn) themeToggleBtn.textContent = theme === 'light' ? '☀️' : '🌙';
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch (e) {
+    // localStorage no disponible (ej. navegación privada); se ignora silenciosamente
+  }
+  if (typeof board !== 'undefined' && board) {
+    draw();
+    drawNext();
+  }
+}
+
+function loadInitialTheme() {
+  let saved = null;
+  try {
+    saved = localStorage.getItem(THEME_KEY);
+  } catch (e) {
+    saved = null;
+  }
+  setTheme(saved === 'light' ? 'light' : 'dark');
+}
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -163,13 +196,13 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   context.fillStyle = color;
   context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
   // highlight
-  context.fillStyle = 'rgba(255,255,255,0.12)';
+  context.fillStyle = HIGHLIGHT_COLORS[currentTheme];
   context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
   context.globalAlpha = 1;
 }
 
 function drawGrid() {
-  ctx.strokeStyle = '#22222e';
+  ctx.strokeStyle = GRID_LINE_COLORS[currentTheme];
   ctx.lineWidth = 0.5;
   for (let c = 1; c < COLS; c++) {
     ctx.beginPath();
@@ -301,4 +334,11 @@ document.addEventListener('keydown', e => {
 
 restartBtn.addEventListener('click', init);
 
+if (themeToggleBtn) {
+  themeToggleBtn.addEventListener('click', () => {
+    setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+  });
+}
+
+loadInitialTheme();
 init();
