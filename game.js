@@ -13,6 +13,11 @@ const COLORS = [
   '#e57373', // Z - red
   '#90caf9', // J - pale blue
   '#ffb74d', // L - orange
+  '#f06292', // + (pentominó) - rosa
+  '#aed581', // U (pentominó) - lima
+  '#7986cb', // Y (pentominó) - índigo
+  '#fff59d', // 1x1 (recompensa) - dorado claro
+  '#8d6e63', // 3x3 hueca (reto) - marrón
 ];
 
 const PIECES = [
@@ -24,7 +29,23 @@ const PIECES = [
   [[5,5,0],[0,5,5],[0,0,0]],                  // Z
   [[6,0,0],[6,6,6],[0,0,0]],                  // J
   [[0,0,7],[7,7,7],[0,0,0]],                  // L
+  [[0,8,0],[8,8,8],[0,8,0]],                  // + (pentominó)
+  [[9,0,9],[9,9,9]],                           // U (pentominó)
+  [[0,10],[10,10],[0,10],[0,10]],             // Y (pentominó)
+  [[11]],                                      // 1x1 (recompensa tras Tetris)
+  [[12,12,12],[12,0,12],[12,12,12]],          // 3x3 hueca (reto)
 ];
+
+// Pools de aparición: los tetrominós estándar son la mayoría, los pentominós
+// raros aparecen ocasionalmente y la pieza reto es todavía más infrecuente.
+// La pieza de recompensa nunca sale del sorteo: solo se otorga tras un Tetris.
+const STANDARD_TYPES = [1, 2, 3, 4, 5, 6, 7];
+const RARE_PENTOMINOES = [8, 9, 10];
+const CHALLENGE_TYPE = 12;
+const REWARD_TYPE = 11;
+const STANDARD_PROBABILITY = 0.85;
+const RARE_PENTOMINO_PROBABILITY = 0.12;
+// El resto (3%) corresponde a la pieza reto (3x3 hueca).
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
@@ -79,10 +100,24 @@ function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
 }
 
-function randomPiece() {
-  const type = Math.floor(Math.random() * 7) + 1;
+function pickPieceType() {
+  const roll = Math.random();
+  if (roll < STANDARD_PROBABILITY) {
+    return STANDARD_TYPES[Math.floor(Math.random() * STANDARD_TYPES.length)];
+  }
+  if (roll < STANDARD_PROBABILITY + RARE_PENTOMINO_PROBABILITY) {
+    return RARE_PENTOMINOES[Math.floor(Math.random() * RARE_PENTOMINOES.length)];
+  }
+  return CHALLENGE_TYPE;
+}
+
+function createPiece(type) {
   const shape = PIECES[type].map(row => [...row]);
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
+}
+
+function randomPiece() {
+  return createPiece(pickPieceType());
 }
 
 function collide(shape, ox, oy) {
@@ -141,6 +176,11 @@ function clearLines() {
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    if (cleared === 4) {
+      // Tetris: la recompensa reemplaza la pieza ya sorteada para "next",
+      // así el jugador la recibe inmediatamente, no una pieza después.
+      next = createPiece(REWARD_TYPE);
+    }
     updateHUD();
   }
 }
