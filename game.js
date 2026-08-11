@@ -53,6 +53,7 @@ const GRID_LINE_COLORS = { dark: '#22222e', light: '#d8d8e4' };
 const HIGHLIGHT_COLORS = { dark: 'rgba(255,255,255,0.12)', light: 'rgba(255,255,255,0.45)' };
 
 const THEME_KEY = 'tetris-theme';
+const INITIAL_LEVEL_KEY = 'tetris-initial-level';
 let currentTheme = 'dark';
 
 const themeToggleBtn = document.getElementById('theme-toggle');
@@ -82,6 +83,29 @@ function loadInitialTheme() {
   setTheme(saved === 'light' ? 'light' : 'dark');
 }
 
+function getInitialLevel() {
+  let saved = null;
+  try {
+    saved = localStorage.getItem(INITIAL_LEVEL_KEY);
+  } catch (e) {
+    saved = null;
+  }
+  const parsed = parseInt(saved, 10);
+  return parsed >= 1 && parsed <= 15 ? parsed : 1;
+}
+
+function loadInitialLevelSetting() {
+  if (initialLevelSelect) initialLevelSelect.value = String(getInitialLevel());
+}
+
+function saveInitialLevel(level) {
+  try {
+    localStorage.setItem(INITIAL_LEVEL_KEY, String(level));
+  } catch (e) {
+    // localStorage no disponible (ej. navegación privada); se ignora silenciosamente
+  }
+}
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -93,8 +117,18 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const pauseMenu = document.getElementById('pause-menu');
+const resumeBtn = document.getElementById('resume-btn');
+const restartPauseBtn = document.getElementById('restart-pause-btn');
+const toggleControlsBtn = document.getElementById('toggle-controls-btn');
+const pauseControls = document.getElementById('pause-controls');
+const initialLevelSelect = document.getElementById('initial-level-select');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+
+function computeDropInterval(level) {
+  return Math.max(100, 1000 - (level - 1) * 90);
+}
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -175,7 +209,7 @@ function clearLines() {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
-    dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    dropInterval = computeDropInterval(level);
     if (cleared === 4) {
       // Tetris: la recompensa reemplaza la pieza ya sorteada para "next",
       // así el jugador la recibe inmediatamente, no una pieza después.
@@ -305,13 +339,12 @@ function togglePause() {
   if (gameOver) return;
   paused = !paused;
   if (!paused) {
+    pauseMenu.classList.add('hidden');
     lastTime = performance.now();
     animId = requestAnimationFrame(loop);
   } else {
     cancelAnimationFrame(animId);
-    overlayTitle.textContent = 'PAUSA';
-    overlayScore.textContent = '';
-    overlay.classList.remove('hidden');
+    pauseMenu.classList.remove('hidden');
   }
 }
 
@@ -335,23 +368,25 @@ function loop(ts) {
 function init() {
   board = createBoard();
   score = 0;
-  lines = 0;
-  level = 1;
+  level = getInitialLevel();
+  lines = (level - 1) * 10;
   paused = false;
   gameOver = false;
-  dropInterval = 1000;
+  dropInterval = computeDropInterval(level);
   dropAccum = 0;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
   updateHUD();
   overlay.classList.add('hidden');
+  pauseMenu.classList.add('hidden');
+  pauseControls.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
 
 document.addEventListener('keydown', e => {
-  if (e.code === 'KeyP') { togglePause(); return; }
+  if (e.code === 'KeyP' || e.code === 'Escape') { togglePause(); return; }
   if (paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
@@ -377,6 +412,18 @@ document.addEventListener('keydown', e => {
 
 restartBtn.addEventListener('click', init);
 
+resumeBtn.addEventListener('click', togglePause);
+
+restartPauseBtn.addEventListener('click', init);
+
+toggleControlsBtn.addEventListener('click', () => {
+  pauseControls.classList.toggle('hidden');
+});
+
+initialLevelSelect.addEventListener('change', () => {
+  saveInitialLevel(initialLevelSelect.value);
+});
+
 if (themeToggleBtn) {
   themeToggleBtn.addEventListener('click', () => {
     setTheme(currentTheme === 'dark' ? 'light' : 'dark');
@@ -384,4 +431,5 @@ if (themeToggleBtn) {
 }
 
 loadInitialTheme();
+loadInitialLevelSetting();
 init();

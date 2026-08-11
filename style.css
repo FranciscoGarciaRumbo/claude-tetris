@@ -220,7 +220,8 @@ kbd {
   color: var(--overlay-score-color);
 }
 
-#restart-btn {
+#restart-btn,
+.pause-actions button {
   margin-top: 8px;
   background: var(--restart-bg);
   color: var(--restart-fg);
@@ -234,6 +235,51 @@ kbd {
   transition: background 0.15s;
 }
 
-#restart-btn:hover {
+#restart-btn:hover,
+.pause-actions button:hover {
   background: var(--restart-bg-hover);
+}
+
+/* ---- Menú de pausa ---- */
+.pause-box {
+  min-width: 220px;
+}
+
+.pause-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--overlay-score-color);
+}
+
+.pause-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.pause-controls {
+  align-items: center;
+}
+
+.pause-controls.hidden {
+  display: none;
+}
+
+.pause-level {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.pause-level select {
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  color: var(--fg);
+  font-size: 14px;
+  padding: 4px 8px;
+  cursor: pointer;
 }
