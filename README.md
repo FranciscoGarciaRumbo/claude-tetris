@@ -35,6 +35,7 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 
 - Tablero de **10 × 20** celdas.
 - Las **7 piezas estándar** (I, O, T, S, Z, J, L) con colores diferenciados.
+- **Piezas no estándar**: ocasionalmente aparecen pentominós (`+`, `U`, `Y`) y, muy de vez en cuando, una pieza reto de 3 × 3 hueca. Al completar un **Tetris** (4 líneas de una vez) se recibe como recompensa inmediata una pieza especial de 1 × 1.
 - **Rotación** con _wall kicks_ básicos (pequeños desplazamientos para que la pieza pueda rotar pegada a la pared).
 - **Soft drop** (bajada acelerada) y **hard drop** (caída instantánea).
 - **Pieza fantasma** (_ghost piece_): muestra dónde aterrizará la pieza actual.
@@ -108,8 +109,13 @@ Aporta el aspecto visual con estética _dark / retro arcade_: fondo oscuro, tipo
 
 Contiene toda la lógica del juego. A grandes rasgos:
 
-- **Modelo del tablero**: una matriz `ROWS × COLS` donde cada celda guarda `0` (vacía) o un índice de color (1–7) que identifica la pieza.
-- **Piezas**: definidas como matrices cuadradas. Para rotar se calcula la transposición + reverso de filas (`rotateCW`).
+- **Modelo del tablero**: una matriz `ROWS × COLS` donde cada celda guarda `0` (vacía) o un índice de color (1–12) que identifica la pieza.
+- **Piezas**: definidas como matrices en `PIECES`. Para rotar se calcula la transposición + reverso de filas (`rotateCW`), lo que funciona igual para tetrominós y para las piezas no estándar más grandes.
+- **Piezas no estándar** (`pickPieceType`): además de los 7 tetrominós clásicos, existen piezas especiales agrupadas en pools:
+  - `STANDARD_TYPES` (I, O, T, S, Z, J, L): 85% de probabilidad en cada sorteo.
+  - `RARE_PENTOMINOES` (`+`, `U`, `Y`): 12% de probabilidad en total, repartido entre las tres.
+  - `CHALLENGE_TYPE` (3 × 3 hueca): 3% de probabilidad; deja un hueco permanente en el centro difícil de limpiar.
+  - `REWARD_TYPE` (1 × 1): nunca sale del sorteo aleatorio; se otorga automáticamente como próxima pieza al completar un Tetris (`clearLines` sobrescribe `next` cuando `cleared === 4`).
 - **Detección de colisiones** (`collide`): comprueba que ninguna celda de la pieza salga del tablero ni se solape con bloques ya fijados.
 - **Wall kicks** (`tryRotate`): si la rotación choca, intenta desplazar la pieza ±1 y ±2 columnas antes de descartar el giro.
 - **Game loop** (`loop`): basado en `requestAnimationFrame`, acumula el tiempo transcurrido y baja la pieza una fila cuando se supera `dropInterval`.
@@ -173,9 +179,11 @@ Algunos parámetros fáciles de tunear en `game.js`:
 | `COLS`         | Columnas del tablero                     | `10`                  |
 | `ROWS`         | Filas del tablero                        | `20`                  |
 | `BLOCK`        | Tamaño en píxeles de cada celda          | `30`                  |
-| `COLORS`       | Paleta de colores por tipo de pieza      | 7 colores             |
+| `COLORS`       | Paleta de colores por tipo de pieza      | 12 colores            |
 | `LINE_SCORES`  | Puntos por 1, 2, 3 o 4 líneas eliminadas | `[0,100,300,500,800]` |
 | `dropInterval` | Velocidad inicial de caída en ms         | `1000`                |
+| `STANDARD_PROBABILITY` | Probabilidad de tetrominó estándar | `0.85`         |
+| `RARE_PENTOMINO_PROBABILITY` | Probabilidad de pentominó raro | `0.12`     |
 
 > Si cambias `COLS`, `ROWS` o `BLOCK`, recuerda ajustar también `width` y `height` del `<canvas id="board">` en `index.html` para que coincida (`COLS × BLOCK` × `ROWS × BLOCK`).
 
