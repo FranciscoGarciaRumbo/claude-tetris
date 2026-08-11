@@ -157,6 +157,21 @@ body {
   border-radius: 4px;
 }
 
+#skin-select {
+  background: var(--kbd-bg);
+  color: var(--kbd-color);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+#skin-select:hover {
+  border-color: var(--restart-bg);
+}
+
 /* ---- Controles ---- */
 .controls ul {
   list-style: none;

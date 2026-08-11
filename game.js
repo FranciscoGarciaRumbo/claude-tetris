@@ -49,13 +49,143 @@ const RARE_PENTOMINO_PROBABILITY = 0.12;
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
-const GRID_LINE_COLORS = { dark: '#22222e', light: '#d8d8e4' };
-const HIGHLIGHT_COLORS = { dark: 'rgba(255,255,255,0.12)', light: 'rgba(255,255,255,0.45)' };
+// Paleta desaturada usada por la skin "pastel" (mismo índice que COLORS).
+const PASTEL_COLORS = [
+  null,
+  '#a8e0e8', // I
+  '#f5e6a8', // O
+  '#d9b8e0', // T
+  '#c0e0c0', // S
+  '#f0b8b8', // Z
+  '#c5dff5', // J
+  '#f5d0a8', // L
+  '#f5c0d5', // + (pentominó)
+  '#d8ecc0', // U (pentominó)
+  '#c8ccec', // Y (pentominó)
+  '#fdf5cc', // 1x1 (recompensa)
+  '#c9b3ab', // 3x3 hueca (reto)
+];
+
+function drawBlockRetro(context, x, y, colorIndex, size, alpha) {
+  if (!colorIndex) return;
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = COLORS[colorIndex];
+  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+  context.fillStyle = getSkinPalette().highlight;
+  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.globalAlpha = 1;
+}
+
+function drawBlockNeon(context, x, y, colorIndex, size, alpha) {
+  if (!colorIndex) return;
+  const color = COLORS[colorIndex];
+  context.globalAlpha = alpha ?? 1;
+  context.shadowBlur = 15;
+  context.shadowColor = color;
+  context.fillStyle = color;
+  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+  // se resetea de inmediato: si no, el glow contamina rejilla/texto/bloques siguientes
+  context.shadowBlur = 0;
+  context.fillStyle = getSkinPalette().highlight;
+  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.globalAlpha = 1;
+}
+
+function drawBlockPastel(context, x, y, colorIndex, size, alpha) {
+  if (!colorIndex) return;
+  const px = x * size + 1, py = y * size + 1, s = size - 2;
+  const radius = Math.min(4, s / 2);
+  const hasRoundRect = typeof context.roundRect === 'function';
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = PASTEL_COLORS[colorIndex];
+  if (hasRoundRect) {
+    context.beginPath();
+    context.roundRect(px, py, s, s, radius);
+    context.fill();
+  } else {
+    context.fillRect(px, py, s, s);
+  }
+  context.fillStyle = getSkinPalette().highlight;
+  if (hasRoundRect) {
+    context.beginPath();
+    context.roundRect(px, py, s, 4, [radius, radius, 0, 0]);
+    context.fill();
+  } else {
+    context.fillRect(px, py, s, 4);
+  }
+  context.globalAlpha = 1;
+}
+
+function drawBlockPixel(context, x, y, colorIndex, size, alpha) {
+  if (!colorIndex) return;
+  const px = x * size + 1, py = y * size + 1, s = size - 2;
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = COLORS[colorIndex];
+  context.fillRect(px, py, s, s);
+  // dithering en damero para simular textura pixel-art sobre el bloque
+  const sub = s / 4;
+  for (let sr = 0; sr < 4; sr++) {
+    for (let sc = 0; sc < 4; sc++) {
+      context.fillStyle = (sr + sc) % 2 === 0 ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)';
+      context.fillRect(px + sc * sub, py + sr * sub, sub, sub);
+    }
+  }
+  context.globalAlpha = 1;
+}
+
+const SKINS = {
+  retro: {
+    boardBg: null,
+    palette: {
+      dark: { grid: '#22222e', highlight: 'rgba(255,255,255,0.12)' },
+      light: { grid: '#d8d8e4', highlight: 'rgba(255,255,255,0.45)' },
+    },
+    drawBlock: drawBlockRetro,
+  },
+  neon: {
+    // "neon" no tiene sentido en fondo claro: se fuerza tablero oscuro siempre
+    boardBg: '#050510',
+    palette: {
+      dark: { grid: '#123', highlight: 'rgba(255,255,255,0.2)' },
+      light: { grid: '#123', highlight: 'rgba(255,255,255,0.2)' },
+    },
+    drawBlock: drawBlockNeon,
+  },
+  pastel: {
+    boardBg: null,
+    palette: {
+      dark: { grid: '#2a2a3a', highlight: 'rgba(255,255,255,0.3)' },
+      light: { grid: '#e4e4f0', highlight: 'rgba(255,255,255,0.6)' },
+    },
+    drawBlock: drawBlockPastel,
+  },
+  pixel: {
+    boardBg: null,
+    palette: {
+      dark: { grid: '#22222e', highlight: 'rgba(255,255,255,0.12)' },
+      light: { grid: '#d8d8e4', highlight: 'rgba(255,255,255,0.45)' },
+    },
+    drawBlock: drawBlockPixel,
+  },
+};
 
 const THEME_KEY = 'tetris-theme';
+const SKIN_KEY = 'tetris-skin';
 let currentTheme = 'dark';
+let currentSkin = 'retro';
+
+function getSkinPalette() {
+  return SKINS[currentSkin].palette[currentTheme];
+}
+
+function applyBoardBackground() {
+  const bg = SKINS[currentSkin].boardBg || '';
+  canvas.style.backgroundColor = bg;
+  nextCanvas.style.backgroundColor = bg;
+}
 
 const themeToggleBtn = document.getElementById('theme-toggle');
+const skinSelect = document.getElementById('skin-select');
 
 function setTheme(theme) {
   currentTheme = theme;
@@ -80,6 +210,31 @@ function loadInitialTheme() {
     saved = null;
   }
   setTheme(saved === 'light' ? 'light' : 'dark');
+}
+
+function setSkin(skin) {
+  currentSkin = SKINS[skin] ? skin : 'retro';
+  if (skinSelect) skinSelect.value = currentSkin;
+  applyBoardBackground();
+  try {
+    localStorage.setItem(SKIN_KEY, currentSkin);
+  } catch (e) {
+    // localStorage no disponible (ej. navegación privada); se ignora silenciosamente
+  }
+  if (typeof board !== 'undefined' && board) {
+    draw();
+    drawNext();
+  }
+}
+
+function loadInitialSkin() {
+  let saved = null;
+  try {
+    saved = localStorage.getItem(SKIN_KEY);
+  } catch (e) {
+    saved = null;
+  }
+  setSkin(saved || 'retro');
 }
 
 const canvas = document.getElementById('board');
@@ -232,19 +387,11 @@ function updateHUD() {
 }
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
-  if (!colorIndex) return;
-  const color = COLORS[colorIndex];
-  context.globalAlpha = alpha ?? 1;
-  context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  // highlight
-  context.fillStyle = HIGHLIGHT_COLORS[currentTheme];
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
-  context.globalAlpha = 1;
+  SKINS[currentSkin].drawBlock(context, x, y, colorIndex, size, alpha);
 }
 
 function drawGrid() {
-  ctx.strokeStyle = GRID_LINE_COLORS[currentTheme];
+  ctx.strokeStyle = getSkinPalette().grid;
   ctx.lineWidth = 0.5;
   for (let c = 1; c < COLS; c++) {
     ctx.beginPath();
@@ -383,5 +530,10 @@ if (themeToggleBtn) {
   });
 }
 
+if (skinSelect) {
+  skinSelect.addEventListener('change', () => setSkin(skinSelect.value));
+}
+
 loadInitialTheme();
+loadInitialSkin();
 init();
